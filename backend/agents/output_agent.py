@@ -1,17 +1,10 @@
-import os
 import re
-from datetime import datetime
+from io import BytesIO
 from docx import Document
 
-# Output folder path
-OUTPUT_DIR = "output"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-# Helper to clean filenames
 def sanitize_filename(name: str) -> str:
     return re.sub(r'[^a-zA-Z0-9_\-]', '', name.replace(" ", "_"))
 
-# Enhanced Markdown-to-DOCX parser with table support
 def parse_markdown_to_docx(doc: Document, content: str):
     lines = content.splitlines()
     i = 0
@@ -22,13 +15,11 @@ def parse_markdown_to_docx(doc: Document, content: str):
             i += 1
             continue
 
-        # Horizontal rule (---)
         if re.match(r"^-{3,}$", line):
             doc.add_paragraph("")
             i += 1
             continue
 
-        # Blockquote
         if line.startswith("> "):
             quote_line = re.sub(r"^> ", "", line)
             quote_line = re.sub(r"\*\*(.*?)\*\*", r"\1", quote_line)
@@ -37,7 +28,6 @@ def parse_markdown_to_docx(doc: Document, content: str):
             i += 1
             continue
 
-        # Table block (starts with "|")
         if line.startswith("|") and "|" in line:
             table_lines = [line]
             i += 1
@@ -45,11 +35,9 @@ def parse_markdown_to_docx(doc: Document, content: str):
                 table_lines.append(lines[i].strip())
                 i += 1
 
-            # Remove separator row (like |---|---|)
             if len(table_lines) >= 2 and re.match(r"^\s*\|[-| ]+\|\s*$", table_lines[1]):
                 table_lines.pop(1)
 
-            # Parse table
             rows = [re.split(r'\s*\|\s*', row.strip('| ')) for row in table_lines]
             table = doc.add_table(rows=len(rows), cols=len(rows[0]))
             table.style = 'Table Grid'
@@ -59,11 +47,9 @@ def parse_markdown_to_docx(doc: Document, content: str):
                     table.cell(r_idx, c_idx).text = cell_text
             continue
 
-        # Bold/Italic cleanup
         clean_line = re.sub(r"\*\*(.*?)\*\*", r"\1", line)
         clean_line = re.sub(r"\*(.*?)\*", r"\1", clean_line)
 
-        # Headers
         header_match = re.match(r"^(#{1,6})\s+(.*)", line)
         if header_match:
             level = len(header_match.group(1))
@@ -76,28 +62,10 @@ def parse_markdown_to_docx(doc: Document, content: str):
 
         i += 1
 
-# Main output agent function
-def run_output_agent(final_article: str, draft_title: str) -> dict:
-    print("📝 OutputAgent received article and title...")
-    print("📌 Draft Title:", draft_title)
-
-    # Clean filename
-    safe_title = sanitize_filename(draft_title)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{safe_title}_{timestamp}.docx"
-    filepath = os.path.join(OUTPUT_DIR, filename)
-
-    # Create and format Word doc
+def get_docx_stream(markdown_content: str) -> BytesIO:
     doc = Document()
-    parse_markdown_to_docx(doc, final_article)
-    doc.save(filepath)
-
-    # HTML preview (optional)
-    html_preview = final_article.replace("\n", "<br>")
-
-    return {
-        "agent": "OutputAgent",
-        "markdown": final_article,
-        "docx_file_path": filepath,
-        "html": html_preview
-    }
+    parse_markdown_to_docx(doc, markdown_content)
+    stream = BytesIO()
+    doc.save(stream)
+    stream.seek(0)
+    return stream
