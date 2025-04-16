@@ -1,199 +1,520 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>AutoAuthor</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f8f9fa;
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-      }
-      .container {
-        max-width: 760px;
-      }
-      .card-title {
-        font-weight: 600;
-      }
-      .form-label {
-        font-weight: 500;
-      }
-      input.form-control, select.form-select {
-        border-radius: 0.5rem;
-      }
-      .btn-primary {
-        border-radius: 0.5rem;
-        transition: background-color 0.2s ease;
-      }
-      .btn-primary:hover {
-        background-color: #0056b3;
-      }
-      .section-heading {
-        font-size: 1rem;
-        color: #6c757d;
-        margin-top: 1.5rem;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <header class="d-flex flex-column align-items-start pb-3 mb-4 border-bottom">
-        <h1 class="display-5 fw-bold mb-1">AutoAuthor</h1>
-        <blockquote class="blockquote mt-2 mb-0">
-          <p class="mb-0">Your AI-powered writing assistant for fast, polished content.</p>
-        </blockquote>
-      </header>
-
-      <div class="card shadow-sm p-4 mb-4">
-        <h5 class="card-title mb-3">📝 Fill in Your Article Brief</h5>
-        <form id="input-form">
-          <div class="mb-3"><label for="topic" class="form-label">Topic</label><input type="text" class="form-control" id="topic" required></div>
-          <div class="mb-3"><label for="target_audience" class="form-label">Target Audience</label><input type="text" class="form-control" id="target_audience" required></div>
-          <div class="section-heading">Goal & Tone</div>
-          <div class="row g-3 mb-3">
-            <div class="col-md">
-              <label for="content_goal" class="form-label">Content Goal</label>
-              <select class="form-select" id="content_goal">
-                <option>Educate</option>
-                <option>Persuade</option>
-                <option>Entertain</option>
-                <option>Sell</option>
-                <option>Inspire</option>
-                <option>Awareness</option>
-                <option>Engage</option>
-              </select>
-            </div>
-            <div class="col-md">
-              <label for="tonality" class="form-label">Tonality</label>
-              <select class="form-select" id="tonality">
-                <option>Conversational</option>
-                <option>Professional</option>
-                <option>Bold</option>
-                <option>Casual</option>
-                <option>Inspirational</option>
-                <option>Empathetic</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="section-heading">Content Details</div>
-          <div class="mb-3"><label for="subtopic" class="form-label">Subtopic</label><input type="text" class="form-control" id="subtopic"></div>
-          <div class="mb-3"><label for="draft_title" class="form-label">Draft Title</label><input type="text" class="form-control" id="draft_title" required></div>
-          <div class="mb-3"><label for="keywords" class="form-label">Keywords (comma-separated)</label><input type="text" class="form-control" id="keywords"></div>
-
-          <div class="section-heading">Structure Preferences</div>
-          <div class="row g-3 mb-3">
-            <div class="col-md">
-              <label for="structure_style" class="form-label">Structure Style</label>
-              <select class="form-select" id="structure_style">
-                <option>Listicle</option>
-                <option>Narrative</option>
-                <option>Tutorial</option>
-                <option>Review</option>
-                <option>Opinion Piece</option>
-                <option>Pros and Cons</option>
-                <option>Case Study</option>
-                <option>Step by Step Guide</option>
-                <option>Essay</option>
-                <option>How To Guide</option>
-                <option>News Article</option>
-                <option>Blog Post</option>
-              </select>
-            </div>
-            <div class="col-md">
-              <label for="article_length" class="form-label">Article Length</label>
-              <select class="form-select" id="article_length">
-                <option>short ~1000 words</option>
-                <option selected>medium ~2000 words</option>
-                <option>long ~3000 words</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-check mb-4">
-            <input class="form-check-input" type="checkbox" id="include_competitors" checked>
-            <label class="form-check-label" for="include_competitors">Include Competitors?</label>
-          </div>
-
-          <button type="submit" class="btn btn-primary w-100" id="submit-button">🚀 Generate Article</button>
-        </form>
-      </div>
-
-      <div id="status-area" class="mt-4"></div>
-    </div>
-
-    <script>
-      const form = document.getElementById('input-form');
-      const submitButton = document.getElementById('submit-button');
-      const statusArea = document.getElementById('status-area');
-
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        submitButton.disabled = true;
-        submitButton.innerHTML = `
-          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-          Generating...
-        `;
-        statusArea.innerHTML = '<div class="alert alert-info" role="alert">🔄 Creating your article, please wait...</div>';
-
-        const formData = {
-          topic: document.getElementById('topic').value,
-          target_audience: document.getElementById('target_audience').value,
-          content_goal: document.getElementById('content_goal').value,
-          tonality: document.getElementById('tonality').value,
-          subtopic: document.getElementById('subtopic').value,
-          draft_title: document.getElementById('draft_title').value,
-          keywords: document.getElementById('keywords').value,
-          structure_style: document.getElementById('structure_style').value,
-          article_length: document.getElementById('article_length').value,
-          include_competitors: document.getElementById('include_competitors').checked
-        };
-
-        try {
-          const response = await fetch('http://127.0.0.1:8000/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-          }
-
-          const blob = await response.blob();
-          const fileURL = window.URL.createObjectURL(blob);
-
-          const downloadLink = document.createElement("a");
-          downloadLink.href = fileURL;
-          downloadLink.download = `${formData.draft_title || "AutoAuthor_Article"}.docx`;
-          downloadLink.className = "btn btn-success mt-3";
-          downloadLink.textContent = "⬇️ Download Your Article";
-
-          statusArea.innerHTML = `
-            <div class="alert alert-success" role="alert">
-              ✅ Article generated successfully!
-            </div>
-          `;
-          statusArea.appendChild(downloadLink);
-
-        } catch (error) {
-          console.error('Error submitting form:', error);
-          statusArea.innerHTML = `
-            <div class="alert alert-danger" role="alert">
-              ❌ Failed to generate article. Error: ${error.message || 'Unknown error'}
-            </div>
-          `;
-        } finally {
-          submitButton.disabled = false;
-          submitButton.innerHTML = 'Generate Article';
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AutoAuthor - AI Content Generator</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet"/>
+<link rel="icon" type="image/png" href="images/brain.png">
+<style>
+        :root {
+            --primary-color: #5D6470;
+            --secondary-color: #7D8491;
+            --accent-color: #F5A623;
+            --body-bg: #FFFFFF;
+            --form-bg: #F9F9FA;
+            --input-bg: #FFFFFF;
+            --header-bg: #EAEAEA;
+            --header-darker: #E0E0E2;
+            --dark-text: #2D3748;
+            --light-text: #4A5568;
+            --header-text: #3A3E47;
+            --hint-text: #A0AEC0;
+            --placeholder-text: #A0AEC0;
         }
-      });
-    </script>
-  </body>
+        
+        body {
+            background-color: var(--body-bg);
+            color: var(--dark-text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .form-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            background-color: var(--form-bg);
+            border: 1px solid #EAEAEA;
+        }
+        
+        .form-header {
+            background: linear-gradient(135deg, var(--header-bg), var(--header-darker));
+            color: var(--header-text);
+            border-radius: 16px 16px 0 0;
+            padding: 2rem;
+            border-bottom: 1px solid #D1D5DB;
+        }
+        
+        .form-header h1 {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-header h1 i {
+            margin-right: 0.5rem;
+            font-size: 1.5rem;
+        }
+        
+        .form-body {
+            padding: 2rem;
+        }
+        
+        .section-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 0.5rem;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            border: 1px solid #E2E8F0;
+            background-color: var(--input-bg);
+            transition: all 0.2s ease;
+        }
+        
+        ::placeholder {
+            color: var(--placeholder-text) !important;
+            opacity: 1;
+            font-size: 0.92em !important;
+        }
+        
+        :-ms-input-placeholder {
+            color: var(--placeholder-text) !important;
+            font-size: 0.92em !important;
+        }
+        
+        ::-ms-input-placeholder {
+            color: var(--placeholder-text) !important;
+            font-size: 0.92em !important;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(93, 100, 112, 0.2);
+            background-color: var(--input-bg);
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--light-text);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(93, 100, 112, 0.3);
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+            margin-top: 1rem;
+            display: none;
+            background-color: #EAEAEA;
+        }
+        
+        .progress-bar {
+            background-color: var(--accent-color);
+        }
+        
+        .status-message {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--light-text);
+            display: none;
+        }
+        
+        .card {
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+            background-color: var(--form-bg);
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tooltip-icon {
+            color: #94A3B8;
+            cursor: pointer;
+            margin-left: 0.5rem;
+        }
+        
+        .section-divider {
+            height: 1px;
+            background-color: #E2E8F0;
+            margin: 2rem 0;
+        }
+        
+        .form-check-label {
+            color: var(--light-text);
+        }
+        
+        .form-section {
+            background-color: var(--input-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            border: 1px solid #EAEAEA;
+        }
+        
+        .textarea-large {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .field-with-icon {
+            position: relative;
+        }
+        
+        .field-icon {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            right: 1rem;
+            color: var(--light-text);
+        }
+        
+        .highlight-field {
+            border-left: 3px solid var(--accent-color);
+            padding-left: calc(1rem - 3px);
+        }
+        
+        .text-hint {
+            color: var(--hint-text);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+        
+        .brain-icon {
+            display: inline-block;
+            width: 1.5rem;
+            height: 1.5rem;
+            margin-right: 0.5rem;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-1.04Z'%3E%3C/path%3E%3Cpath d='M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-1.04Z'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+        }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="form-container">
+<div class="form-header">
+<h1>AutoAuthor</h1>
+<p class="mb-0">Your AI-powered writing assistant for fast, polished content.</p>
+</div>
+<div class="form-body">
+<form id="contentForm">
+<div class="form-section">
+<div class="section-title">
+<i class="bi bi-pencil-square"></i> Basic Information
+</div>
+<div class="row g-3 mb-4">
+<div class="col-md-6">
+<label class="form-label" for="topic">Topic <span class="text-danger">*</span></label>
+<input class="form-control" id="topic" placeholder="What's your content about?" required="" type="text"/>
+</div>
+<div class="col-md-6">
+<label class="form-label" for="draftTitle">Draft Title</label>
+<input class="form-control" id="draftTitle" placeholder="Suggested title for your content" type="text"/>
+</div>
+</div>
+<div class="row g-3">
+<div class="col-12">
+<label class="form-label" for="contentDirection">Content Direction</label>
+<textarea class="form-control highlight-field" id="contentDirection" placeholder="Provide specific details you would like your article to focus on (e.g., 'Focus on the benefits of renewable energy.')" rows="3"></textarea>
+<p class="text-hint">Clearly outline the focus areas or specifics of your article.</p>
+</div>
+<div class="col-12">
+<label class="form-label" for="keywords">Keywords (comma-separated)</label>
+<textarea class="form-control highlight-field" id="keywords" placeholder="Enter SEO keywords to include in your content (e.g., content marketing, SEO strategy, digital marketing)" rows="3"></textarea>
+<p class="text-hint">Add multiple keywords to help with SEO and content focus</p>
+</div>
+</div>
+</div>
+<div class="form-section">
+<div class="section-title">
+<i class="bi bi-people-fill"></i> Audience & Targeting
+</div>
+<div class="row g-3 mb-4">
+<div class="col-md-6">
+<label class="form-label" for="targetAudience">Target Audience <span class="text-danger">*</span></label>
+<input class="form-control" id="targetAudience" placeholder="Who are you writing for?" required="" type="text"/>
+</div>
+<div class="col-md-6">
+<label class="form-label" for="industryVertical">Industry/Vertical</label>
+<input class="form-control" id="industryVertical" placeholder="Business sector or niche" type="text"/>
+</div>
+</div>
+<div class="row g-3">
+<div class="col-12">
+<label class="form-label" for="audiencePainPoints">Audience Pain Points</label>
+<textarea class="form-control textarea-large highlight-field" id="audiencePainPoints" placeholder="Describe the problems, challenges, or frustrations your audience faces that your content will address"></textarea>
+<p class="text-hint">Understanding pain points helps create more relevant and engaging content</p>
+</div>
+<div class="col-md-6">
+<label class="form-label" for="geographicFocus">Geographic Focus</label>
+<input class="form-control" id="geographicFocus" placeholder="Region or market to focus on" type="text"/>
+</div>
+</div>
+</div>
+<div class="form-section">
+<div class="section-title">
+<i class="bi bi-palette-fill"></i> Content Style & Structure
+</div>
+<div class="row g-3 mb-4">
+<div class="col-md-6">
+<label class="form-label" for="contentGoal">Content Goal <span class="text-danger">*</span></label>
+<select class="form-select" id="contentGoal" required="">
+<option disabled="" selected="" value="">Select a goal</option>
+<option value="educate">Educate</option>
+<option value="entertain">Entertain</option>
+<option value="inspire">Inspire</option>
+<option value="persuade">Persuade</option>
+<option value="inform">Inform</option>
+<option value="convert">Convert</option>
+</select>
+</div>
+<div class="col-md-6">
+<label class="form-label" for="tonality">Tonality</label>
+<select class="form-select" id="tonality">
+<option selected="" value="conversational">Conversational</option>
+<option value="professional">Professional</option>
+<option value="friendly">Friendly</option>
+<option value="authoritative">Authoritative</option>
+<option value="humorous">Humorous</option>
+<option value="formal">Formal</option>
+</select>
+</div>
+</div>
+<div class="row g-3 mb-4">
+<div class="col-md-6">
+<label class="form-label" for="structureStyle">Structure Style</label>
+<select class="form-select" id="structureStyle">
+<option selected="" value="listicle">Listicle</option>
+<option value="howTo">How-to Guide</option>
+<option value="comparison">Comparison</option>
+<option value="storyBased">Story-based</option>
+<option value="qAndA">Q&A Format</option>
+<option value="tutorial">Tutorial</option>
+</select>
+</div>
+<div class="col-md-6">
+<label class="form-label" for="articleLength">Article Length</label>
+<select class="form-select" id="articleLength">
+<option value="short">Short (~1000 words)</option>
+<option selected="" value="medium">Medium (~2000 words)</option>
+<option value="long">Long (~3000+ words)</option>
+</select>
+</div>
+</div>
+<div class="row g-3">
+<div class="col-md-6">
+<label class="form-label" for="readingLevel">Preferred Reading Level</label>
+<select class="form-select" id="readingLevel">
+<option value="beginner">Beginner</option>
+<option selected="" value="intermediate">Intermediate</option>
+<option value="expert">Expert</option>
+<option value="technical">Technical</option>
+</select>
+</div>
+<div class="col-md-6">
+<label class="form-label" for="referenceBrands">References</label>
+<input class="form-control" id="referenceBrands" placeholder="Publications whose style you'd like to emulate" type="text"/>
+<p class="text-hint">e.g. Vogue, Fast Company</p>
+</div>
+</div>
+</div>
+<div class="form-section">
+<div class="section-title">
+<i class="bi bi-gear-fill"></i> Additional Options
+</div>
+<div class="row g-3">
+<div class="col-12">
+<label class="form-label" for="callToAction">Primary Call-to-Action</label>
+<textarea class="form-control textarea-large highlight-field" id="callToAction" placeholder="What specific action should readers take after reading your content? (e.g., Sign up for our newsletter, Download our free guide, Schedule a consultation)"></textarea>
+<p class="text-hint">A clear call-to-action increases conversion rates and reader engagement</p>
+</div>
+<div class="col-md-6 d-flex align-items-end mt-4">
+<div class="form-check">
+<input class="form-check-input" id="includeCompetitors" type="checkbox"/>
+<label class="form-check-label" for="includeCompetitors">
+Include Competitors Analysis?
+</label>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-4">
+<button class="btn btn-primary w-100" id="generateBtn" type="button">
+<i class="bi bi-magic"></i> Generate Article
+</button>
+<div class="mt-3" id="progressContainer">
+<div class="progress">
+<div aria-valuemax="100" aria-valuemin="0" aria-valuenow="0" class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar" role="progressbar"></div>
+</div>
+<p class="status-message text-center mt-2" id="statusMessage"></p>
+<div id="status-area" class="mt-2"></div>
+</div>
+</div>
+</form>
+</div>
+</div>
+</div>
+<script>
+  const form = document.getElementById('contentForm');
+  const generateBtn = document.getElementById('generateBtn');
+  const progressBar = document.getElementById('progressBar');
+  const progressContainer = document.querySelector('.progress');
+  const statusMessage = document.getElementById('statusMessage');
+  const statusArea = document.getElementById('status-area');
+  
+  const eventMap = {
+    research_started: { percent: 20, text: "🔍 Gathering insights from the web..." },
+    writer_started: { percent: 40, text: "✍️ Drafting the article..." },
+    seo_started: { percent: 60, text: "📈 Optimizing for SEO..." },
+    humanizer_started: { percent: 80, text: "🧠 Humanizing the tone..." },
+    output_started: { percent: 95, text: "📄 Preparing final document..." },
+    complete: { percent: 100, text: "✅ All done! Ready to download." }
+  };
+  
+  function connectSSE(formData) {
+    const query = new URLSearchParams(formData).toString();
+    const source = new EventSource(`http://localhost:8000/generate-stream?${query}`);
+  
+    source.onopen = () => {
+      console.log("SSE connection opened");
+      progressContainer.style.display = 'flex';
+      statusMessage.style.display = 'block';
+      progressBar.style.width = eventMap.research_started.percent + '%';
+      statusMessage.textContent = eventMap.research_started.text;
+      statusArea.innerHTML = '';
+    };
+  
+    source.onmessage = function (event) {
+      try {
+        const data = JSON.parse(event.data);
+        const status = data.status;
+  
+        if (status === "ping") {
+          console.log("Received keep-alive ping");
+          return;
+        }
+  
+        if (eventMap[status]) {
+          requestAnimationFrame(() => {
+            progressBar.style.width = eventMap[status].percent + "%";
+            statusMessage.textContent = eventMap[status].text;
+          });
+        }
+  
+        if (status === "complete") {
+          source.close();
+          generateBtn.disabled = false;
+          statusArea.innerHTML = `
+            <div class='alert alert-success text-center'>
+              ✅ Article generated successfully!<br>
+              <a href="http://localhost:8000/generate" class="btn btn-success mt-3" download>
+                ⬇️ Download Your Article
+              </a>
+            </div>
+          `;
+        }
+  
+        if (status === "error") {
+          source.close();
+          generateBtn.disabled = false;
+          statusArea.innerHTML = `<div class='alert alert-danger'>❌ ${data.message}</div>`;
+          progressContainer.style.display = 'none';
+          statusMessage.style.display = 'none';
+        }
+  
+        if (status === "finished") {
+          source.close();
+          console.log("Stream closed by server");
+        }
+      } catch (e) {
+        console.error("Error parsing SSE message:", e);
+      }
+    };
+  
+    source.onerror = function () {
+      console.error("SSE connection error. Attempting to reconnect...");
+      source.close();
+      generateBtn.disabled = false;
+      statusMessage.textContent = "Connection lost. Retrying...";
+      setTimeout(() => connectSSE(formData), 3000);
+    };
+  
+    return source;
+  }
+  
+  generateBtn.addEventListener('click', function (e) {
+    e.preventDefault();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+  
+    generateBtn.disabled = true;
+    progressContainer.style.display = 'flex';
+    statusMessage.style.display = 'block';
+    progressBar.style.width = eventMap.research_started.percent + '%';
+    statusMessage.textContent = eventMap.research_started.text;
+    statusArea.innerHTML = '';
+  
+    const formData = {
+      topic: document.getElementById("topic").value,
+      target_audience: document.getElementById("targetAudience").value,
+      content_goal: document.getElementById("contentGoal").value,
+      tonality: document.getElementById("tonality").value,
+      content_direction: document.getElementById("contentDirection").value,
+      draft_title: document.getElementById("draftTitle").value,
+      keywords: document.getElementById("keywords").value,
+      structure_style: document.getElementById("structureStyle").value,
+      article_length: document.getElementById("articleLength").value,
+      industry_vertical: document.getElementById("industryVertical").value,
+      audience_pain_points: document.getElementById("audiencePainPoints").value,
+      geographic_focus: document.getElementById("geographicFocus").value,
+      reading_level: document.getElementById("readingLevel").value,
+      reference_brands: document.getElementById("referenceBrands").value,
+      call_to_action: document.getElementById("callToAction").value,
+      include_competitors: document.getElementById("includeCompetitors").checked
+    };
+  
+    connectSSE(formData);
+  });
+  </script>
+</body>
 </html>
