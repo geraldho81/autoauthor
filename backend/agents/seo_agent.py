@@ -7,60 +7,75 @@ load_dotenv()
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
 def format_seo_prompt(user_input: dict, draft_article: str) -> str:
+    title = user_input.get("draft_title", "Untitled")
+    content_direction = user_input.get("content_direction", "")
     keywords = user_input.get("keywords", "")
-    tone = user_input.get("tonality", "")
     audience = user_input.get("target_audience", "")
+    tone = user_input.get("tonality", "")
     goal = user_input.get("content_goal", "")
-    style = user_input.get("structure_style", "")
-    length = user_input.get("article_length", "")
+    structure = user_input.get("structure_style", "essay")
+    length = user_input.get("article_length", "medium ~2000 words")
+    vertical = user_input.get("industry_vertical", "")
+    pain_points = user_input.get("audience_pain_points", "")
+    geography = user_input.get("geographic_focus", "")
+    level = user_input.get("reading_level", "")
+    brands = user_input.get("reference_brands", "")
+    call_to_action = user_input.get("call_to_action", "")
+    include_competitors = user_input.get("include_competitors", False)
 
-    # Map dropdown label to actual word count estimate
     length_map = {
         "short ~1000 words": 1000,
         "medium ~2000 words": 2000,
         "long ~3000 words": 3000
     }
-    length_value = length_map.get(length, 2000)  # Default to 2000 words if unmatched
+    length_value = length_map.get(length, 2000)
 
     return f"""You are an expert SEO content optimizer.
 
-Your task is to improve the following article using these SEO guidelines:
+Your task is to improve the following article using advanced SEO techniques and user-aligned strategy.
 
-== SEO Guidelines ==
-1. Insert main and related keywords naturally: {keywords}
-2. Improve content depth (clarify weak points, add examples).
-3. Structure headings properly (H1 for title, H2 for sections, H3 for subpoints).
-4. Improve readability: vary sentence length, avoid robotic phrasing, aim for Flesch score > 60.
-5. Align with Google's Helpful Content Guidelines:
-   - Human-first, not keyword-stuffed
-   - Answer real user queries clearly
-   - Provide unique and helpful insights
-6. Apply EEAT principles:
-   - Experience (real examples)
-   - Expertise (accurate terminology)
-   - Authority (cite relevant tools or stats)
-   - Trustworthiness (neutral, informative tone)
+== SEO STRATEGY ==
+1. Integrate primary and related keywords naturally: {keywords}
+2. Add relevant internal and external references if suitable
+3. Improve structure using proper headers (H1 for title, H2/H3 for sections)
+4. Enhance clarity, depth, and examples — especially for audience pain points
+5. Maintain tone: {tone}, and reflect reader expectations
+6. Aim for Flesch Reading Ease > 60
+7. Avoid robotic or generic phrasing
 
-== User Brief ==
+== EEAT + HELPFUL CONTENT PRINCIPLES ==
+- Experience: Add real examples or context
+- Expertise: Use accurate terms and trusted references
+- Authority: Mention brands, tools, or frameworks where relevant
+- Trust: Neutral, accessible, honest tone
+- Helpfulness: Focus on solving real reader queries
+
+== USER BRIEF ==
+- Industry: {vertical}
 - Audience: {audience}
+- Known Pain Points: {pain_points}
+- Geography: {geography}
+- Reading Level: {level}
+- Structure Style: {structure}
 - Goal: {goal}
 - Tone: {tone}
-- Structure Style: {style}
-- Expected Length: {length} (~{length_value} words)
+- Brands to Match: {brands}
+- Include Competitor Context: {"Yes" if include_competitors else "No"}
+- Suggested CTA: {call_to_action or "N/A"}
 
-== Length Note ==
-The optimized article must retain or expand to approximately {length_value} **words** — not characters or tokens.
+== LENGTH ==
+Target length is approximately {length_value} words. Retain or expand only if valuable — no padding.
 
-== Article to Optimize ==
+== ARTICLE TO OPTIMIZE ==
 {draft_article}
 
-== Output Instructions ==
-- Return only the improved article
-- Maintain markdown formatting (H1, H2, etc.)
-- Do not remove original ideas — only enhance
+== OUTPUT FORMAT ==
+- Return only the optimized article
+- Keep markdown formatting (## for H2, ### for H3, etc.)
+- Do NOT remove original ideas — only improve them
 """
 
-def run_seo_agent(user_input: dict, draft_article: str) -> dict:
+def run_seo_agent(user_input: dict, draft_article: str, output_dir: str) -> dict:
     if not DEEPSEEK_API_KEY:
         raise EnvironmentError("DEEPSEEK_API_KEY not set in .env")
 
@@ -74,7 +89,7 @@ def run_seo_agent(user_input: dict, draft_article: str) -> dict:
     }
 
     payload = {
-        "model": "deepseek-chat",
+        "model": "deepseek-reasoner",
         "messages": [
             {"role": "system", "content": "You are an expert SEO content editor."},
             {"role": "user", "content": prompt.strip()}
@@ -86,6 +101,11 @@ def run_seo_agent(user_input: dict, draft_article: str) -> dict:
 
     data = response.json()
     content = data["choices"][0]["message"]["content"]
+
+    # Save SEO output to output folder
+    seo_path = os.path.join(output_dir, "seo.md")
+    with open(seo_path, "w", encoding="utf-8") as f:
+        f.write(content.strip())
 
     return {
         "agent": "SEOAgent",
