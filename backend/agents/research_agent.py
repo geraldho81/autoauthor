@@ -7,55 +7,100 @@ load_dotenv()
 
 PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
 API_URL = "https://api.perplexity.ai/chat/completions"
-MODEL = "sonar"  # Adjust model name if needed
+MODEL = "sonar-pro"
 
 def format_research_prompt(user_input: dict) -> str:
     topic = user_input.get("topic", "")
+    content_direction = user_input.get("subtopic", "")  # Align with user_input field
+    draft_title = user_input.get("draft_title", "Untitled")
+    keywords = user_input.get("keywords", "")
     audience = user_input.get("target_audience", "")
     goal = user_input.get("content_goal", "")
     tone = user_input.get("tonality", "")
-    subtopic = user_input.get("subtopic", "")
     structure = user_input.get("structure_style", "")
     length = user_input.get("article_length", "medium")
-
+    vertical = user_input.get("industry_vertical", "")
+    pain_points = user_input.get("audience_pain_points", "")
+    geography = user_input.get("geographic_focus", "")
+    level = user_input.get("reading_level", "")
+    brands = user_input.get("reference_brands", "")
+    call_to_action = user_input.get("call_to_action", "")
+    include_competitors = user_input.get("include_competitors", False)
+    
     return f"""
-You are a world-class AI research assistant powered by the Perplexity API. Your role is to generate deep, multi-perspective research tailored to a user’s communication goals. You will be provided with a primary topic and a set of contextual parameters. Your task is to go beyond surface-level information by aggregating, synthesizing, and structuring insights from authoritative and diverse sources.
+You are a world-class AI research assistant powered by the Perplexity API. Your role is to generate deep, multi-perspective research tailored to a user's communication goals. Go beyond surface-level summaries. Aggregate, synthesize, and structure insights from authoritative, diverse sources.
 
 == MAIN TOPIC ==
 {topic}
 
 == SUBTOPIC ==
-{subtopic if subtopic else "N/A"}
+{content_direction if content_direction else "N/A"}
 
-The user may also include a subtopic, which is a secondary but related concept or theme. Use this to enrich the depth and breadth of your research — it may serve as a complementary angle, additional context, or expansion point to the main topic.
+The Content directin provides specific context for the main topic. It can be a specific angle, a related concept, or a particular aspect of the main topic that the user wants to explore further. This helps narrow down the focus of the research and ensures that the insights generated are relevant to the user's needs.
 
-Research the main topic deeply, prioritizing accuracy, nuance, and synthesis of ideas from multiple high-authority sources.
+== DOMAIN CONTEXT ==
+- Industry Vertical: {vertical or "Not specified"}
+- Geographic Focus: {geography or "None"} 
+- Reading Level: {level or "General"}
+- Reference Brands/Voices: {brands or "None"}
 
-Integrate the Subtopic as a complementary theme that supports or expands on the main topic. Use it to provide additional depth, contrast, case examples, or secondary insights where appropriate.
+== TARGET PROFILE ==
+- Audience: {audience}
+- Pain Points: {pain_points or "N/A"}
+- Audience Knowledge Level: Assess what this audience already knows and address knowledge gaps
+- Decision-Making Factors: Consider what influences this audience's choices related to the topic
 
-== USER BRIEF ==
-- Target Audience: {audience}
+== USER OBJECTIVES ==
 - Content Goal: {goal}
 - Tonality: {tone}
 - Structure Style: {structure}
-- Article Length: {length}
+- Desired Length: {length}
+- Include Competitor Research: {"Yes" if include_competitors else "No"}
 
 == CONTENT GOAL GUIDANCE ==
-Adapt your research to match the goal:
-- Educate: Deliver structured, in-depth explanations with clarity.
-- Persuade: Present compelling arguments, comparative analysis, and supporting data.
-- Entertain: Use surprising facts, witty delivery, or engaging narrative elements.
-- Sell: Focus on benefits, differentiation, and persuasive positioning.
-- Inspire: Highlight emotionally resonant stories or visionary thinking.
-- Awareness: Offer accessible and well-explained facts.
-- Engage: Present thought-provoking content that sparks curiosity or discussion.
+Adapt your research based on the content goal:
+- Educate: Deliver structured, in-depth explanations with clarity. Prioritize factual accuracy, accessible examples, and logical progression of concepts.
+- Persuade: Present compelling arguments, comparative analysis, and supporting data. Include counterarguments and address common objections with evidence.
+- Entertain: Use surprising facts, witty delivery, or engaging narrative elements. Incorporate storytelling techniques and memorable anecdotes.
+- Sell: Focus on benefits, differentiation, and persuasive positioning. Highlight value propositions and include credibility elements such as social proof or authority references.
+- Inspire: Highlight emotionally resonant stories or visionary thinking. Connect to larger themes and include aspirational elements that resonate with audience values.
+- Awareness: Offer accessible and well-explained facts. Prioritize clear explanations of key concepts with relevant current context.
+- Engage: Present thought-provoking content that sparks curiosity or discussion. Include conversation starters and perspectives that challenge conventional thinking.
 
-Adapt research insights to suit the target audience, factoring in their knowledge level, interests, and intent. Match the selected tonality in style, vocabulary, and structure. Use the specified structure style to organize the research in a format that best serves the user’s objective.
+== RESEARCH METHODOLOGY ==
+1. Identify and prioritize authoritative sources from:
+   - Academic research and peer-reviewed journals
+   - Industry reports and whitepapers
+   - Expert opinions and thought leadership
+   - Statistical databases and market analyses
+   - Primary sources when available
+2. Apply triangulation by cross-referencing multiple sources
+3. Note areas of consensus, disagreement, and emerging perspectives
+4. Distinguish between established facts, expert opinions, and emerging trends
+5. Consider temporal relevance (historical context and current developments)
 
-Output should be accurate, rich in synthesis, and highly useful.
+== ANALYTICAL FRAMEWORK ==
+- Compare and contrast multiple perspectives on the topic
+- Identify underlying assumptions in different viewpoints
+- Apply appropriate theoretical frameworks relevant to the topic
+- Consider implications and practical applications of research findings
+- Evaluate strength of evidence behind key claims
+- Highlight knowledge gaps or areas requiring further research
+
+== TASK ==
+1. Deeply research the main topic, providing contextual background and current relevance
+2. Enrich with the subtopic where applicable, showing relationships between main topic and subtopic
+3. Align insights with the target audience and their pain points, using appropriate language and examples
+4. Format insights in a style that matches the specified structure and tone
+5. If competitor analysis is requested, include market comparisons, positioning strategies, and competitive advantages/disadvantages
+6. Integrate specific data points, statistics, and concrete examples to support key points
+7. Present balanced perspectives that acknowledge complexity and nuance
+8. Conclude with actionable implications or forward-looking insights
+
+Only return structured, insightful, and synthesized research – no fluff. Prioritize depth over breadth, focusing on the most relevant aspects for the specified audience and content goal.
 """
 
-def run_research_agent(user_input: dict) -> dict:
+def run_research_agent(user_input: dict, output_dir: str) -> dict:
     if not PERPLEXITY_API_KEY:
         raise EnvironmentError("PERPLEXITY_API_KEY not set in .env")
 
@@ -87,6 +132,11 @@ def run_research_agent(user_input: dict) -> dict:
                 raise ValueError("Unexpected API response structure")
 
             content = data["choices"][0]["message"]["content"]
+            # Save research summary to output folder
+            research_path = os.path.join(output_dir, "research.txt")
+            with open(research_path, "w", encoding="utf-8") as f:
+                f.write(content.strip())
+
             return {
                 "agent": "ResearchAgent",
                 "prompt": prompt.strip(),
